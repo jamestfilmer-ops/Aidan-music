@@ -1,5 +1,6 @@
 import './globals.css'
 import Nav from './components/Nav'
+import { Analytics } from '@vercel/analytics/next'   // ← ADD THIS LINE
 
 export const metadata = {
   title: 'Banger Ratios — The Real Measure of Musical Consistency',
@@ -12,6 +13,7 @@ export default function RootLayout({ children }) {
       <body>
         <Nav />
         {children}
+        <Analytics />   {/* ← ADD THIS LINE */}
       </body>
     </html>
   )
