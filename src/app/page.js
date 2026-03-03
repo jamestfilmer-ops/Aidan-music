@@ -10,12 +10,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState(null)
 
-  // Check if user is logged in
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user || null)
-    })
-    // Load top rated albums
+    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null))
     loadTopAlbums()
   }, [])
 
@@ -29,7 +25,6 @@ export default function Home() {
     setTopAlbums(data || [])
   }
 
-  // Search iTunes API for albums
   async function searchAlbums(e) {
     e.preventDefault()
     if (!searchQuery.trim()) return
@@ -55,44 +50,11 @@ export default function Home() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D' }}>
-      {/* HEADER */}
-      <header style={{
-        borderBottom: '1px solid #222',
-        padding: '16px 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        position: 'sticky',
-        top: 0,
-        background: 'rgba(13,13,13,0.95)',
-        backdropFilter: 'blur(20px)',
-        zIndex: 100
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 8,
-            background: '#FF0066',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 900, fontSize: 14, color: 'white'
-          }}>BR</div>
-          <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: 1 }}>
-            BANGER RATIOS
-          </span>
-        </div>
-        <a href='/auth' style={{
-          padding: '8px 16px', borderRadius: 8,
-          background: user ? '#222' : '#FF0066',
-          color: 'white', textDecoration: 'none',
-          fontSize: 13, fontWeight: 600
-        }}>
-          {user ? 'My Profile' : 'Sign Up / Log In'}
-        </a>
-      </header>
+    <div style={{ minHeight: '100vh' }}>
 
       {/* HERO */}
       <section style={{ padding: '60px 24px', textAlign: 'center' }}>
-        <h1 style={{ fontSize: 48, fontWeight: 900, margin: '0 0 12px' }}>
+        <h1 style={{ fontSize: 48, fontWeight: 900, margin: '0 0 12px', color: '#1D1D1F' }}>
           The Real Measure of Musical Consistency
         </h1>
         <p style={{ color: '#888', fontSize: 18, maxWidth: 500, margin: '0 auto 32px' }}>
@@ -102,8 +64,8 @@ export default function Home() {
         {/* SEARCH BAR */}
         <form onSubmit={searchAlbums} style={{
           display: 'flex', maxWidth: 500, margin: '0 auto',
-          background: '#1A1A1A', borderRadius: 12,
-          border: '1px solid #333', overflow: 'hidden'
+          background: '#F5F5F5', borderRadius: 12,
+          border: '1px solid #E5E5E5', overflow: 'hidden'
         }}>
           <input
             type='text'
@@ -113,7 +75,7 @@ export default function Home() {
             style={{
               flex: 1, padding: '14px 18px',
               background: 'transparent', border: 'none',
-              color: 'white', fontSize: 16, outline: 'none'
+              color: '#1D1D1F', fontSize: 16, outline: 'none'
             }}
           />
           <button type='submit' style={{
@@ -131,7 +93,7 @@ export default function Home() {
         {/* SEARCH RESULTS */}
         {searchResults.length > 0 && (
           <section>
-            <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: '#1D1D1F' }}>
               Search Results
             </h2>
             <div style={{
@@ -143,9 +105,9 @@ export default function Home() {
                 <a key={album.collectionId}
                   href={`/album/${album.collectionId}`}
                   style={{
-                    background: '#111', borderRadius: 12,
+                    background: '#F5F5F5', borderRadius: 12,
                     overflow: 'hidden', textDecoration: 'none',
-                    color: 'white', border: '1px solid #222'
+                    color: '#1D1D1F', border: '1px solid #E5E5E5'
                   }}>
                   <img
                     src={album.artworkUrl100?.replace('100x100', '300x300')}
@@ -172,7 +134,7 @@ export default function Home() {
         {/* TOP RATED ALBUMS */}
         {topAlbums.length > 0 && (
           <section style={{ marginTop: 48 }}>
-            <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: '#1D1D1F' }}>
               🔥 Top Rated Albums
             </h2>
             {topAlbums.map((album, i) => {
@@ -183,28 +145,25 @@ export default function Home() {
                   style={{
                     display: 'flex', alignItems: 'center',
                     gap: 16, padding: '14px 16px',
-                    background: i % 2 === 0 ? '#111' : 'transparent',
+                    background: i % 2 === 0 ? '#F5F5F5' : 'transparent',
                     borderRadius: 10, textDecoration: 'none',
-                    color: 'white', marginBottom: 4
+                    color: '#1D1D1F', marginBottom: 4
                   }}>
                   <span style={{
-                    fontSize: 18, fontWeight: 800, color: '#444',
+                    fontSize: 18, fontWeight: 800, color: '#CCC',
                     width: 32, textAlign: 'center'
                   }}>{i + 1}</span>
                   {album.artwork_url && <img
                     src={album.artwork_url}
                     alt=''
-                    style={{
-                      width: 48, height: 48,
-                      borderRadius: 8, objectFit: 'cover'
-                    }}
+                    style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }}
                   />}
                   <div style={{ flex: 1 }}>
                     <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>
                       {album.name}
                     </p>
                     <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
-                      {album.artist_name} \u00B7 {album.total_ratings} ratings
+                      {album.artist_name} · {album.total_ratings} ratings
                     </p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
@@ -227,7 +186,7 @@ export default function Home() {
         {topAlbums.length === 0 && searchResults.length === 0 && (
           <section style={{ textAlign: 'center', padding: '60px 0' }}>
             <p style={{ fontSize: 48, marginBottom: 16 }}>🎵</p>
-            <p style={{ color: '#666', fontSize: 16 }}>
+            <p style={{ color: '#999', fontSize: 16 }}>
               Search for an album above to start rating tracks!
             </p>
           </section>
@@ -235,16 +194,11 @@ export default function Home() {
       </main>
 
       {/* FOOTER */}
-      <footer style={{
-        borderTop: '1px solid #222',
-        padding: 24, textAlign: 'center'
-      }}>
-        <p style={{ color: '#444', fontSize: 12 }}>
-          Banger Ratios\u2122 2026 \u00B7 The Real Measure of Musical Consistency
+      <footer style={{ borderTop: '1px solid #E5E5E5', padding: 24, textAlign: 'center' }}>
+        <p style={{ color: '#999', fontSize: 12 }}>
+          Banger Ratios™ 2026 · The Real Measure of Musical Consistency
         </p>
       </footer>
     </div>
   )
 }
-
-
