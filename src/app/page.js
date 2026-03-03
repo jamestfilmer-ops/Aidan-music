@@ -39,7 +39,7 @@ export default function Home() {
     if (!query.trim()) return
     setLoading(true)
     try {
-      const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=album&limit=15`)
+      const r = await fetch(`/api/itunes-search?term=${encodeURIComponent(query)}`)
       const d = await r.json()
       setResults(d.results || [])
     } catch(e) { console.error(e) }
@@ -55,7 +55,7 @@ export default function Home() {
           padding: '14px 24px', display: 'flex', alignItems: 'center',
           justifyContent: 'center', gap: 16, animation: 'slideDown 0.3s ease' }}>
           <span style={{ fontSize: 13, color: 'white', fontWeight: 500 }}>
-            🔥 <strong>NEW:</strong> Kendrick Lamar’s “GNX” just dropped
+            🔥 <strong>NEW:</strong> Kendrick Lamar's "GNX" just dropped
             — community Banger Ratio is live!{' '}
             <a href="/album/1781033043" style={{ color: 'white', fontWeight: 700, textDecoration: 'underline' }}>
               Rate it now →</a>

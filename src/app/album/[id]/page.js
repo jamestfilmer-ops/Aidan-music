@@ -23,7 +23,7 @@ export default function AlbumPage() {
   }, [albumId])
 
   async function loadAlbum() {
-    const res = await fetch(`https://itunes.apple.com/lookup?id=${albumId}&entity=song`)
+    const res = await fetch(`/api/itunes?id=${albumId}`)
     const data = await res.json()
     const results = data.results || []
     const albumData = results.find(r => r.wrapperType === 'collection')
