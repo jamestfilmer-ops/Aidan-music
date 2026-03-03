@@ -1,129 +1,112 @@
 'use client'
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
+const BADGES = {
+  classic: { label: '💎 Certified Classic', min: 90 },
+  gold:    { label: '🥇 Solid Gold', min: 75 },
+  mixed:   { label: '🎵 Hit or Miss', min: 60 },
+  filler:  { label: '⚠️ Filler Warning', min: 40 },
+  skip:    { label: '❌ Skip It', min: 0 },
+}
+
+function getBadge(ratio) {
+  if (ratio >= 90) return BADGES.classic
+  if (ratio >= 75) return BADGES.gold
+  if (ratio >= 60) return BADGES.mixed
+  if (ratio >= 40) return BADGES.filler
+  return BADGES.skip
+}
+
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState([])
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
   const [topAlbums, setTopAlbums] = useState([])
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState(null)
+  const [showBanner, setShowBanner] = useState(true)
+  const [showCount, setShowCount] = useState(20)
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null))
-    loadTopAlbums()
-  }, [])
+  useEffect(() => { loadTop() }, [])
 
-  async function loadTopAlbums() {
-    const { data } = await supabase
-      .from('albums')
-      .select('*')
-      .gt('total_ratings', 0)
-      .order('banger_ratio', { ascending: false })
-      .limit(10)
+  async function loadTop() {
+    const { data } = await supabase.from('albums').select('*')
+      .gt('total_ratings', 0).order('banger_ratio', { ascending: false }).limit(50)
     setTopAlbums(data || [])
   }
 
-  async function searchAlbums(e) {
+  async function search(e) {
     e.preventDefault()
-    if (!searchQuery.trim()) return
+    if (!query.trim()) return
     setLoading(true)
     try {
-      const res = await fetch(
-        `https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&entity=album&limit=12`
-      )
-      const data = await res.json()
-      setSearchResults(data.results || [])
-    } catch (err) {
-      console.error('Search failed:', err)
-    }
+      const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=album&limit=15`)
+      const d = await r.json()
+      setResults(d.results || [])
+    } catch(e) { console.error(e) }
     setLoading(false)
-  }
-
-  function getBadge(ratio) {
-    if (ratio >= 90) return { label: '💎 Certified Classic', color: '#FFD700' }
-    if (ratio >= 75) return { label: '🥇 Solid Gold', color: '#FFD700' }
-    if (ratio >= 60) return { label: '🎵 Hit or Miss', color: '#FF0066' }
-    if (ratio >= 40) return { label: '⚠️ Filler Warning', color: '#F5A623' }
-    return { label: '❌ Skip It', color: '#FF2D55' }
   }
 
   return (
     <div style={{ minHeight: '100vh' }}>
 
-      {/* HERO */}
-      <section style={{ padding: '60px 24px', textAlign: 'center' }}>
-        <h1 style={{ fontSize: 48, fontWeight: 900, margin: '0 0 12px', color: '#1D1D1F' }}>
-          The Real Measure of Musical Consistency
-        </h1>
-        <p style={{ color: '#888', fontSize: 18, maxWidth: 500, margin: '0 auto 32px' }}>
-          Rate every track. See the Banger Ratio. Settle the debate.
-        </p>
+      {/* ANNOUNCEMENT BANNER */}
+      {showBanner && (
+        <div style={{ background: 'linear-gradient(135deg, #FF0066, #CC0052)',
+          padding: '14px 24px', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', gap: 16, animation: 'slideDown 0.3s ease' }}>
+          <span style={{ fontSize: 13, color: 'white', fontWeight: 500 }}>
+            🔥 <strong>NEW:</strong> Kendrick Lamar’s “GNX” just dropped
+            — community Banger Ratio is live!{' '}
+            <a href="/album/1781033043" style={{ color: 'white', fontWeight: 700, textDecoration: 'underline' }}>
+              Rate it now →</a>
+          </span>
+          <button onClick={() => setShowBanner(false)} style={{ background: 'none', border: 'none',
+            color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 18 }}>×</button>
+        </div>
+      )}
 
-        {/* SEARCH BAR */}
-        <form onSubmit={searchAlbums} style={{
-          display: 'flex', maxWidth: 500, margin: '0 auto',
-          background: '#F5F5F5', borderRadius: 12,
-          border: '1px solid #E5E5E5', overflow: 'hidden'
-        }}>
-          <input
-            type='text'
-            placeholder='Search for an album...'
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            style={{
-              flex: 1, padding: '14px 18px',
-              background: 'transparent', border: 'none',
-              color: '#1D1D1F', fontSize: 16, outline: 'none'
-            }}
-          />
-          <button type='submit' style={{
-            padding: '14px 24px', background: '#FF0066',
-            border: 'none', color: 'white',
-            fontWeight: 700, fontSize: 14, cursor: 'pointer'
-          }}>
-            {loading ? 'Searching...' : 'Search'}
+      {/* HERO + SEARCH */}
+      <section style={{ padding: '52px 24px 40px', textAlign: 'center' }}>
+        <h1 style={{ fontSize: 42, fontWeight: 700, color: '#1D1D1F', margin: '0 0 10px', lineHeight: 1.15 }}>
+          The Real Measure of<br /><span style={{ color: '#FF0066' }}>Musical Consistency</span>
+        </h1>
+        <p style={{ color: '#666', fontSize: 16, maxWidth: 420, margin: '0 auto 28px' }}>
+          Rate every track 1–7. See the Banger Ratio. Settle the debate.
+        </p>
+        <form onSubmit={search} style={{ display: 'flex', maxWidth: 480, margin: '0 auto',
+          borderRadius: 12, border: '2px solid #E5E5E5', overflow: 'hidden' }}>
+          <input type="text" placeholder="Search for any album..."
+            value={query} onChange={e => setQuery(e.target.value)}
+            style={{ flex: 1, padding: '13px 18px', border: 'none', fontSize: 15,
+              outline: 'none', background: 'white', color: '#1D1D1F' }} />
+          <button type="submit" style={{ padding: '13px 22px', background: '#FF0066',
+            border: 'none', color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+            {loading ? '...' : 'Search'}
           </button>
         </form>
       </section>
 
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 60px' }}>
-
+      <main style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 80px' }}>
         {/* SEARCH RESULTS */}
-        {searchResults.length > 0 && (
-          <section>
-            <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: '#1D1D1F' }}>
-              Search Results
-            </h2>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-              gap: 16
-            }}>
-              {searchResults.map(album => (
-                <a key={album.collectionId}
-                  href={`/album/${album.collectionId}`}
-                  style={{
-                    background: '#F5F5F5', borderRadius: 12,
-                    overflow: 'hidden', textDecoration: 'none',
-                    color: '#1D1D1F', border: '1px solid #E5E5E5'
-                  }}>
-                  <img
-                    src={album.artworkUrl100?.replace('100x100', '300x300')}
-                    alt={album.collectionName}
-                    style={{ width: '100%', aspectRatio: '1', objectFit: 'cover' }}
-                  />
-                  <div style={{ padding: 12 }}>
-                    <p style={{
-                      fontSize: 13, fontWeight: 700,
-                      margin: '0 0 4px',
-                      overflow: 'hidden', textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>{album.collectionName}</p>
-                    <p style={{ fontSize: 11, color: '#888', margin: 0 }}>
-                      {album.artistName}
-                    </p>
+        {results.length > 0 && (
+          <section style={{ marginBottom: 48 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700 }}>Search Results</h2>
+              <button onClick={() => setResults([])} style={{ background: 'none', border: 'none',
+                color: '#999', cursor: 'pointer', fontSize: 13 }}>Clear</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 14 }}>
+              {results.map(a => (
+                <a key={a.collectionId} href={`/album/${a.collectionId}`}
+                  style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E5E5', transition: 'transform 0.15s' }}
+                  onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                  onMouseOut={e => e.currentTarget.style.transform = ''}>
+                  <img src={a.artworkUrl100?.replace('100x100','300x300')} alt=""
+                    style={{ width: '100%', aspectRatio: '1', objectFit: 'cover' }} />
+                  <div style={{ padding: 10 }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden',
+                      textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.collectionName}</p>
+                    <p style={{ fontSize: 11, color: '#999' }}>{a.artistName}</p>
                   </div>
                 </a>
               ))}
@@ -131,74 +114,51 @@ export default function Home() {
           </section>
         )}
 
-        {/* TOP RATED ALBUMS */}
-        {topAlbums.length > 0 && (
-          <section style={{ marginTop: 48 }}>
-            <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: '#1D1D1F' }}>
-              🔥 Top Rated Albums
-            </h2>
-            {topAlbums.map((album, i) => {
-              const badge = getBadge(album.banger_ratio)
-              return (
-                <a key={album.id}
-                  href={`/album/${album.itunes_collection_id}`}
-                  style={{
-                    display: 'flex', alignItems: 'center',
-                    gap: 16, padding: '14px 16px',
-                    background: i % 2 === 0 ? '#F5F5F5' : 'transparent',
-                    borderRadius: 10, textDecoration: 'none',
-                    color: '#1D1D1F', marginBottom: 4
-                  }}>
-                  <span style={{
-                    fontSize: 18, fontWeight: 800, color: '#CCC',
-                    width: 32, textAlign: 'center'
-                  }}>{i + 1}</span>
-                  {album.artwork_url && <img
-                    src={album.artwork_url}
-                    alt=''
-                    style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }}
-                  />}
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>
-                      {album.name}
-                    </p>
-                    <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
-                      {album.artist_name} · {album.total_ratings} ratings
-                    </p>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{
-                      fontSize: 22, fontWeight: 900,
-                      color: '#FF0066', margin: '0 0 2px'
-                    }}>{album.banger_ratio}%</p>
-                    <p style={{
-                      fontSize: 10, color: badge.color,
-                      fontWeight: 600, margin: 0
-                    }}>{badge.label}</p>
-                  </div>
-                </a>
-              )
-            })}
-          </section>
-        )}
-
-        {/* EMPTY STATE */}
-        {topAlbums.length === 0 && searchResults.length === 0 && (
-          <section style={{ textAlign: 'center', padding: '60px 0' }}>
-            <p style={{ fontSize: 48, marginBottom: 16 }}>🎵</p>
-            <p style={{ color: '#999', fontSize: 16 }}>
-              Search for an album above to start rating tracks!
-            </p>
-          </section>
-        )}
+        {/* TOP ALBUMS LEADERBOARD */}
+        <section>
+          <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>🔥 Top Albums</h2>
+          <p style={{ color: '#999', fontSize: 13, marginBottom: 20 }}>Ranked by community Banger Ratio</p>
+          {topAlbums.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '60px 0' }}>
+              <p style={{ fontSize: 40, marginBottom: 12 }}>🎵</p>
+              <p style={{ color: '#999' }}>No rated albums yet. Be the first — search above!</p>
+            </div>
+          )}
+          {topAlbums.slice(0, showCount).map((a, i) => {
+            const badge = getBadge(a.banger_ratio)
+            return (
+              <a key={a.id} href={`/album/${a.itunes_collection_id}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '12px 14px', borderRadius: 10, marginBottom: 2, transition: 'background 0.15s' }}
+                onMouseOver={e => e.currentTarget.style.background = '#F5F5F5'}
+                onMouseOut={e => e.currentTarget.style.background = ''}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: i < 3 ? '#FF0066' : '#CCC',
+                  width: 28, textAlign: 'center' }}>{i + 1}</span>
+                {a.artwork_url && <img src={a.artwork_url.replace("600x600","100x100")} alt=""
+                  style={{ width: 44, height: 44, borderRadius: 8 }} />}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden',
+                    textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</p>
+                  <p style={{ fontSize: 12, color: '#999' }}>{a.artist_name} · {a.total_ratings} ratings</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ fontSize: 20, fontWeight: 700, color: '#FF0066' }}>{a.banger_ratio}%</p>
+                  <p style={{ fontSize: 9, color: '#999', fontWeight: 600 }}>{badge.label}</p>
+                </div>
+              </a>
+            )
+          })}
+          {topAlbums.length > showCount && (
+            <div style={{ textAlign: 'center', marginTop: 16 }}>
+              <button onClick={() => setShowCount(s => s + 20)} style={{ padding: '10px 28px',
+                borderRadius: 10, border: '1px solid #E5E5E5', background: 'white',
+                color: '#666', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                Show More
+              </button>
+            </div>
+          )}
+        </section>
       </main>
-
-      {/* FOOTER */}
-      <footer style={{ borderTop: '1px solid #E5E5E5', padding: 24, textAlign: 'center' }}>
-        <p style={{ color: '#999', fontSize: 12 }}>
-          Banger Ratios™ 2026 · The Real Measure of Musical Consistency
-        </p>
-      </footer>
     </div>
   )
 }

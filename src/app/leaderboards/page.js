@@ -12,6 +12,24 @@ function getBadge(r) {
   return ''
 }
 
+const Select = ({ label, value, options, onChange }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <label style={{ fontSize: 11, fontWeight: 600, color: '#999', letterSpacing: 0.5 }}>{label}</label>
+    <select value={value} onChange={e => onChange(e.target.value)} style={{
+      padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E5',
+      background: value !== 'All' ? '#FF006610' : 'white',
+      color: value !== 'All' ? '#FF0066' : '#333',
+      fontSize: 13, fontWeight: value !== 'All' ? 600 : 400,
+      cursor: 'pointer', outline: 'none', appearance: 'none',
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+      backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center',
+      paddingRight: 32, minWidth: 140,
+    }}>
+      {options.map(o => <option key={o} value={o}>{o}</option>)}
+    </select>
+  </div>
+)
+
 export default function LeaderboardsPage() {
   const [albums, setAlbums] = useState([])
   const [genre, setGenre] = useState('All')
@@ -42,44 +60,49 @@ export default function LeaderboardsPage() {
     name, avgRatio: (d.totalRatio/d.count).toFixed(1), albumCount: d.count, topAlbum: d.albums[0]
   })).sort((a,b) => b.avgRatio - a.avgRatio)
 
-  const pill = (label, active, onClick) => (
-    <button key={label} onClick={onClick} style={{
-      padding: '6px 14px', borderRadius: 20,
-      border: '1px solid ' + (active ? '#FF0066' : '#E5E5E5'),
-      background: active ? '#FF006610' : 'white',
-      color: active ? '#FF0066' : '#666',
-      fontSize: 12, fontWeight: active ? 600 : 400, cursor: 'pointer', whiteSpace: 'nowrap',
-    }}>{label}</button>
-  )
-
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>
       <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 4 }}>Leaderboards</h1>
       <p style={{ color: '#999', fontSize: 14, marginBottom: 24 }}>The highest-rated music, ranked by the community</p>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
-        {[['albums','Albums'],['artists','Artists']].map(([key,label]) =>
-          <button key={key} onClick={() => setTab(key)} style={{
-            padding: '8px 20px', borderRadius: 8, border: 'none', fontSize: 13,
-            fontWeight: tab === key ? 700 : 400,
-            background: tab === key ? '#1D1D1F' : '#F5F5F5',
-            color: tab === key ? 'white' : '#666', cursor: 'pointer',
-          }}>{label}</button>
-        )}
-      </div>
-      <div style={{ marginBottom: 20 }}>
-        <p style={{ fontSize: 11, color: '#999', fontWeight: 600, marginBottom: 6 }}>GENRE</p>
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 12 }}>
-          {GENRES.map(g => pill(g, genre === g, () => setGenre(g)))}
+
+      {/* TABS + FILTERS ROW */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+
+        {/* Album / Artist toggle */}
+        <div style={{ display: 'flex', gap: 4, background: '#F5F5F5',
+          borderRadius: 10, padding: 4 }}>
+          {[['albums','Albums'],['artists','Artists']].map(([key,label]) =>
+            <button key={key} onClick={() => setTab(key)} style={{
+              padding: '7px 18px', borderRadius: 7, border: 'none', fontSize: 13,
+              fontWeight: tab === key ? 700 : 400,
+              background: tab === key ? 'white' : 'transparent',
+              color: tab === key ? '#1D1D1F' : '#999',
+              boxShadow: tab === key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}>{label}</button>
+          )}
         </div>
-        <p style={{ fontSize: 11, color: '#999', fontWeight: 600, marginBottom: 6 }}>DECADE</p>
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          {DECADES.map(d => pill(d, decade === d, () => setDecade(d)))}
+
+        {/* Dropdowns */}
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+          <Select label="GENRE" value={genre} options={GENRES} onChange={setGenre} />
+          <Select label="DECADE" value={decade} options={DECADES} onChange={setDecade} />
+          {(genre !== 'All' || decade !== 'All') && (
+            <button onClick={() => { setGenre('All'); setDecade('All') }} style={{
+              padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E5',
+              background: 'white', color: '#999', fontSize: 12,
+              cursor: 'pointer', alignSelf: 'flex-end',
+            }}>Clear</button>
+          )}
         </div>
       </div>
+
+      {/* ALBUM LIST */}
       {tab === 'albums' && albums.map((a, i) => (
         <a key={a.id} href={`/album/${a.itunes_collection_id}`}
           style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px',
-            borderRadius: 10, marginBottom: 2, transition: 'background 0.15s' }}
+            borderRadius: 10, marginBottom: 2, transition: 'background 0.15s', textDecoration: 'none', color: 'inherit' }}
           onMouseOver={e => e.currentTarget.style.background = '#F5F5F5'}
           onMouseOut={e => e.currentTarget.style.background = ''}>
           <span style={{ fontSize: 14, fontWeight: 700, color: i < 3 ? '#FF0066' : '#CCC',
@@ -88,13 +111,15 @@ export default function LeaderboardsPage() {
             style={{ width: 40, height: 40, borderRadius: 6 }} />}
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden',
-              textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</p>
-            <p style={{ fontSize: 11, color: '#999' }}>{a.artist_name} · {a.genre} · {a.release_date?.slice(0,4)}</p>
+              textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{a.name}</p>
+            <p style={{ fontSize: 11, color: '#999', margin: 0 }}>{a.artist_name} · {a.genre} · {a.release_date?.slice(0,4)}</p>
           </div>
           <span style={{ fontSize: 18, fontWeight: 700, color: '#FF0066' }}>
             {a.banger_ratio}% {getBadge(a.banger_ratio)}</span>
         </a>
       ))}
+
+      {/* ARTIST LIST */}
       {tab === 'artists' && artists.map((a, i) => (
         <div key={a.name} style={{ display: "flex", alignItems: "center", gap: 12,
           padding: "12px", borderRadius: 10, marginBottom: 2,
@@ -102,13 +127,18 @@ export default function LeaderboardsPage() {
           <span style={{ fontSize: 14, fontWeight: 700, color: i < 3 ? '#FF0066' : '#CCC',
             width: 26, textAlign: 'center' }}>{i + 1}</span>
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 14, fontWeight: 600 }}>{a.name}</p>
-            <p style={{ fontSize: 11, color: '#999' }}>{a.albumCount} album{a.albumCount > 1 ? 's' : ''} rated</p>
+            <p style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>{a.name}</p>
+            <p style={{ fontSize: 11, color: '#999', margin: 0 }}>{a.albumCount} album{a.albumCount > 1 ? 's' : ''} rated</p>
           </div>
           <span style={{ fontSize: 18, fontWeight: 700, color: '#FF0066' }}>{a.avgRatio}%</span>
         </div>
       ))}
-      {albums.length === 0 && <p style={{ textAlign: 'center', color: '#CCC', padding: 40 }}>No albums match these filters yet.</p>}
+
+      {albums.length === 0 && (
+        <p style={{ textAlign: 'center', color: '#CCC', padding: 40 }}>
+          No albums match these filters yet.
+        </p>
+      )}
     </div>
   )
 }
