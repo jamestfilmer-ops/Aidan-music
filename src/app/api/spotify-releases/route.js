@@ -29,4 +29,18 @@ export async function GET(request) {
   const data = await res.json()
   console.log('Spotify response status:', res.status)
   console.log('Albums returned:', data.albums?.items?.length)
-  console.log('Error
+  console.log('Spotify error:', data.error || 'none')
+
+  const albums = data.albums?.items || []
+
+  const cutoff = new Date()
+  cutoff.setMonth(cutoff.getMonth() - 12)
+  const filtered = albums.filter(a => new Date(a.release_date) >= cutoff)
+  console.log('After 12mo filter:', filtered.length)
+
+  return Response.json({ albums: filtered, debug: {
+    total: albums.length,
+    afterFilter: filtered.length,
+    spotifyError: data.error || null
+  }})
+}
