@@ -20,7 +20,6 @@ export default function AlbumPage() {
   }, [albumId])
 
   async function loadAlbum() {
-    // Fetch from iTunes API
     const res = await fetch(
       `https://itunes.apple.com/lookup?id=${albumId}&entity=song`
     )
@@ -31,8 +30,8 @@ export default function AlbumPage() {
 
     if (!albumData) return
 
-    // Upsert album into Supabase
-    const { data: dbAlbum } = await supabase
+    // Upsert album
+    let { data: dbAlbum } = await supabase
       .from('albums')
       .upsert({
         itunes_collection_id: albumData.collectionId,
@@ -45,6 +44,18 @@ export default function AlbumPage() {
       }, { onConflict: 'itunes_collection_id' })
       .select()
       .single()
+
+    // Fallback: if upsert didn't return the row, fetch it manually
+    if (!dbAlbum) {
+      const { data: existingAlbum } = await supabase
+        .from('albums')
+        .select('*')
+        .eq('itunes_collection_id', albumData.collectionId)
+        .single()
+      dbAlbum = existingAlbum
+    }
+
+    if (!dbAlbum) { console.error('Could not load album'); return }
 
     setAlbum(dbAlbum)
 
@@ -60,7 +71,7 @@ export default function AlbumPage() {
       }, { onConflict: 'itunes_track_id' })
     }
 
-    // Load tracks from DB (with avg ratings)
+    // Load tracks from DB
     const { data: dbTracks } = await supabase
       .from('tracks')
       .select('*')
@@ -69,7 +80,7 @@ export default function AlbumPage() {
 
     setTracks(dbTracks || [])
 
-    // Load user’s existing ratings
+    // Load user's existing ratings
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     if (currentUser) {
       const { data: userRatings } = await supabase
@@ -95,12 +106,10 @@ export default function AlbumPage() {
       score: score
     }, { onConflict: 'user_id,track_id' })
 
-    // Recalculate banger ratio
     await supabase.rpc('recalculate_banger_ratio', {
       p_album_id: album.id
     })
 
-    // Reload to see updated averages
     const { data: dbTracks } = await supabase
       .from('tracks')
       .select('*')
@@ -134,7 +143,6 @@ export default function AlbumPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0D0D0D' }}>
-      {/* HEADER */}
       <header style={{
         borderBottom: '1px solid #222', padding: '12px 24px',
         display: 'flex', alignItems: 'center', gap: 10
@@ -150,10 +158,8 @@ export default function AlbumPage() {
       </header>
 
       <main style={{ maxWidth: 700, margin: '0 auto', padding: '32px 20px' }}>
-        {/* ALBUM INFO */}
         {album && (
-          <div style={{ display: 'flex', gap: 24, marginBottom: 32,
-            flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 24, marginBottom: 32, flexWrap: 'wrap' }}>
             {album.artwork_url && <img src={album.artwork_url}
               alt={album.name} style={{ width: 200, height: 200,
                 borderRadius: 14, objectFit: 'cover' }} />}
@@ -182,7 +188,6 @@ export default function AlbumPage() {
           </div>
         )}
 
-        {/* TRACK LIST */}
         <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>
           Rate Every Track
         </h2>
@@ -211,10 +216,10 @@ export default function AlbumPage() {
                 {track.is_banger && ' \uD83D\uDD25'}
               </p>
               <p style={{ color: '#666', fontSize: 11, margin: 0 }}>
-                {track.duration_ms ? msToTime(track.duration_ms) : ''} 
+                {track.duration_ms ? msToTime(track.duration_ms) : ''}
                 {track.total_ratings > 0
-                  ? `\u00B7 Avg: ${track.avg_rating} \u00B7 ${track.total_ratings} ratings`
-                  : '\u00B7 No ratings yet'}
+                  ? ` \u00B7 Avg: ${track.avg_rating} \u00B7 ${track.total_ratings} ratings`
+                  : ' \u00B7 No ratings yet'}
               </p>
             </div>
             <div style={{ display: 'flex', gap: 3 }}>
