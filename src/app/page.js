@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import Counter from './components/Counter'
 
 const BADGES = {
   classic: { label: '💎 Certified Classic', min: 90 },
